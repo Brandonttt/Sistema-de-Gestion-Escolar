@@ -50,7 +50,6 @@ public class Modelos {
         /**
          * Obtiene el nombre completo del alumno formateado
          * 
-         * @return String con el nombre completo (nombre + apellidos)
          */
         public String getNombreCompleto() {
             return nombre + " " + apellidoPaterno + " " + apellidoMaterno;

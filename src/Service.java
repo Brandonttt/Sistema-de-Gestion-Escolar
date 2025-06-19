@@ -1,30 +1,20 @@
 import java.sql.*;
-import java.util.*;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 /**
  * Servicio que implementa la lógica de negocio para el sistema de gestión
  * escolar.
- * Esta clase se encarga de calcular promedios, indicadores de rendimiento,
- * ingresos
- * y competencias según los requisitos establecidos.
- * 
- * @author Sistema de Gestión Escolar
- * @version 1.0
  */
 public class Service {
 
     // Constantes del negocio
     private static final int CALIFICACION_MINIMA_APROBATORIA = 80;
-    private static final float COSTO_EXAMEN_SEMESTRAL = 400.0f;
+    private static final float COSTO_EXAMEN_SEMESTRAL = 350.0f;
     private static final float COSTO_EXAMEN_PARCIAL = 150.0f;
 
     /**
-     * Calcula y almacena los promedios de cada alumno por asignatura
-     * utilizando procedimientos almacenados para mayor eficiencia.
+     * Calcula y almacena los promedios de cada alumno por asignatura utilizando
+     * procedimientos almacenados p.
      * 
-     * @throws SQLException si ocurre un error en la base de datos
      */
     public void calcularPromediosPorAlumnoAsignatura() throws SQLException {
         try {
@@ -38,10 +28,8 @@ public class Service {
     }
 
     /**
-     * Calcula y almacena los promedios por asignatura
-     * utilizando procedimientos almacenados para mayor eficiencia.
-     * 
-     * @throws SQLException si ocurre un error en la base de datos
+     * Calculamos y almacenamos los promedios por cada asignatura utilizando
+     * procedimientos almacenados .
      */
     public void calcularPromediosPorAsignatura() throws SQLException {
         try {
@@ -55,10 +43,9 @@ public class Service {
     }
 
     /**
-     * Calcula y almacena los indicadores de rendimiento para cada alumno
-     * utilizando procedimientos almacenados para mayor eficiencia.
+     * Calcula y almacena los indicadores de rendimiento para cada alumno utilizando
+     * procedimientos almacenados .
      * 
-     * @throws SQLException si ocurre un error en la base de datos
      */
     public void calcularIndicadoresRendimiento() throws SQLException {
         try {
@@ -72,10 +59,8 @@ public class Service {
     }
 
     /**
-     * Calcula y almacena los ingresos para cada alumno
-     * utilizando procedimientos almacenados para mayor eficiencia.
-     * 
-     * @throws SQLException si ocurre un error en la base de datos
+     * Calcula y almacena los ingresos para cada alumno utilizando procedimientos
+     * almacenados para mayor eficiencia.
      */
     public void calcularIngresos() throws SQLException {
         try {
@@ -90,8 +75,6 @@ public class Service {
 
     /**
      * Muestra el promedio de cada asignatura en consola
-     * 
-     * @throws SQLException si ocurre un error en la base de datos
      */
     public void mostrarPromedioPorAsignatura() throws SQLException {
         Connection conn = null;
@@ -108,7 +91,7 @@ public class Service {
                             "JOIN asignaturas a ON pa.id_asignatura = a.id_asignatura " +
                             "ORDER BY a.descripcion");
 
-            System.out.println("\n===== PROMEDIO POR ASIGNATURA =====");
+            System.out.println("\n======== PROMEDIO POR CADA ASIGNATURA ========");
             System.out.printf("%-30s | %s\n", "ASIGNATURA", "PROMEDIO");
             System.out.println("----------------------------------------------");
 
@@ -123,7 +106,10 @@ public class Service {
             System.err.println("Error al mostrar promedios por asignatura: " + e.getMessage());
             throw e;
         } finally {
-            ConexionDB.cerrarRecursos(rs, stmt);
+            if (rs != null)
+                rs.close();
+            if (stmt != null)
+                stmt.close();
         }
     }
 
@@ -131,7 +117,6 @@ public class Service {
      * Muestra los alumnos con sus calificaciones y competencias ordenados por
      * apellido paterno
      * 
-     * @throws SQLException si ocurre un error en la base de datos
      */
     public void mostrarCompetenciasPorAlumno() throws SQLException {
         Connection conn = null;
@@ -144,16 +129,17 @@ public class Service {
 
             rs = stmt.executeQuery(
                     "SELECT a.nombre, a.apellido_paterno, a.apellido_materno, " +
-                            "as.descripcion as asignatura, c.promedio, c.acronimo " +
+                            "asig.descripcion as asignatura, c.promedio, c.acronimo " +
                             "FROM competencias c " +
                             "JOIN alumnos a ON c.id_alumno = a.id_alumno " +
-                            "JOIN asignaturas as ON c.id_asignatura = as.id_asignatura " +
-                            "ORDER BY a.apellido_paterno, a.apellido_materno, a.nombre, as.descripcion");
+                            "JOIN asignaturas asig ON c.id_asignatura = asig.id_asignatura " +
+                            "ORDER BY a.apellido_paterno, a.apellido_materno, a.nombre, asig.descripcion");
 
-            System.out.println("\n===== COMPETENCIAS POR ALUMNO =====");
+            System.out.println("\n===== DESGLOSE GENERAL DE ALUMNOS =====");
             System.out.printf("%-40s | %-30s | %-8s | %s\n",
                     "NOMBRE COMPLETO", "ASIGNATURA", "PROMEDIO", "COMPETENCIA");
-            System.out.println("----------------------------------------------------------------------");
+            System.out.println(
+                    "------------------------------------------------------------------------------------------------------------");
 
             while (rs.next()) {
                 String nombreCompleto = rs.getString("nombre") + " " +
@@ -171,14 +157,15 @@ public class Service {
             System.err.println("Error al mostrar competencias por alumno: " + e.getMessage());
             throw e;
         } finally {
-            ConexionDB.cerrarRecursos(rs, stmt);
+            if (rs != null)
+                rs.close();
+            if (stmt != null)
+                stmt.close();
         }
     }
 
     /**
      * Muestra el total a pagar por cada alumno
-     * 
-     * @throws SQLException si ocurre un error en la base de datos
      */
     public void mostrarTotalPagosPorAlumno() throws SQLException {
         Connection conn = null;
@@ -189,17 +176,33 @@ public class Service {
             conn = ConexionDB.obtenerConexion();
             stmt = conn.createStatement();
 
+            // Consulta que obtiene la cantidad de exámenes
             rs = stmt.executeQuery(
                     "SELECT a.nombre, a.apellido_paterno, a.apellido_materno, " +
-                            "i.costo_parciales, i.costo_semestrales, i.costo_total " +
+                            "ir.cantidad_parciales, ir.cantidad_semestrales, " +
+                            "i.costo_total_parciales, i.cost_total_semestrales, " +
+                            "(i.costo_total_parciales + i.cost_total_semestrales) as costo_total " +
                             "FROM ingresos i " +
                             "JOIN alumnos a ON i.id_alumno = a.id_alumno " +
+                            "JOIN indicadores_rendimiento ir ON a.id_alumno = ir.id_alumno " +
                             "ORDER BY a.apellido_paterno, a.apellido_materno, a.nombre");
 
+            // Definir los costos unitarios para mostrar en el encabezado
+            int costoParcial = 100;
+            int costoSemestral = 350;
+
+            // Formato de tabla con costos unitarios en el encabezado
             System.out.println("\n===== PAGOS POR ALUMNO =====");
-            System.out.printf("%-40s | %-15s | %-15s | %s\n",
-                    "NOMBRE COMPLETO", "PARCIALES", "SEMESTRALES", "TOTAL");
-            System.out.println("-------------------------------------------------------------------");
+            System.out.println(
+                    "--------------------------------------------------------------------------------------------------------------");
+            System.out.printf("%-30s | %-10s | %-15s | %-10s | %-15s | %-15s\n",
+                    "ALUMNOS", "PARCIALES",
+                    "COSTO PARCIAL ($" + costoParcial + ")",
+                    "SEMESTRALES",
+                    "COSTO SEMESTRAL ($" + costoSemestral + ")",
+                    "TOTAL");
+            System.out.println(
+                    "---------------------------------------------------------------------------------------------------------------");
 
             float granTotalParciales = 0;
             float granTotalSemestrales = 0;
@@ -209,27 +212,35 @@ public class Service {
                 String nombreCompleto = rs.getString("nombre") + " " +
                         rs.getString("apellido_paterno") + " " +
                         rs.getString("apellido_materno");
-                float costoParciales = rs.getFloat("costo_parciales");
-                float costoSemestrales = rs.getFloat("costo_semestrales");
+                int cantidadParciales = rs.getInt("cantidad_parciales");
+                int cantidadSemestrales = rs.getInt("cantidad_semestrales");
+                float costoParciales = rs.getFloat("costo_total_parciales");
+                float costoSemestrales = rs.getFloat("cost_total_semestrales");
                 float total = rs.getFloat("costo_total");
 
                 granTotalParciales += costoParciales;
                 granTotalSemestrales += costoSemestrales;
                 granTotal += total;
 
-                System.out.printf("%-40s | $%-14.2f | $%-14.2f | $%.2f\n",
-                        nombreCompleto, costoParciales, costoSemestrales, total);
+                System.out.printf("%-30s | %-10d | $%-14.2f      | %-10d  | $%-14.2f        | $%.2f\n",
+                        nombreCompleto, cantidadParciales, costoParciales,
+                        cantidadSemestrales, costoSemestrales, total);
             }
 
-            System.out.println("-------------------------------------------------------------------");
-            System.out.printf("%-40s | $%-14.2f | $%-14.2f | $%.2f\n",
-                    "TOTAL", granTotalParciales, granTotalSemestrales, granTotal);
+            System.out.println(
+                    "--------------------------------------------------------------------------------------------------------------------");
+            // No mostramos totales de cantidades de exámenes, solo los costos
+            // System.out.printf("%-30s | %-10s | $%-14.2f | %-10s | $%-14.2f | $%.2f\n",
+            // "TOTAL", "", granTotalParciales, "", granTotalSemestrales, granTotal);
 
         } catch (SQLException e) {
             System.err.println("Error al mostrar pagos por alumno: " + e.getMessage());
             throw e;
         } finally {
-            ConexionDB.cerrarRecursos(rs, stmt);
+            if (rs != null)
+                rs.close();
+            if (stmt != null)
+                stmt.close();
         }
     }
 }

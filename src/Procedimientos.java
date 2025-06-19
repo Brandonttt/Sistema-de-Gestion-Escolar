@@ -3,11 +3,6 @@ import java.sql.*;
 /**
  * Clase para crear y gestionar los procedimientos almacenados en la base de
  * datos.
- * Esta clase se encarga de crear los procedimientos almacenados al iniciar la
- * aplicación.
- * 
- * @author Sistema de Gestión Escolar
- * @version 1.0
  */
 public class Procedimientos {
 
@@ -144,24 +139,22 @@ public class Procedimientos {
                     "    CLOSE cur_alumnos;\n" +
                     "END";
 
-            // SP para calcular ingresos
+            // SP para calcular ingresos - CORREGIDO
             String spCalcularIngresos = "CREATE PROCEDURE IF NOT EXISTS sp_calcular_ingresos()\n" +
                     "BEGIN\n" +
-                    "    DECLARE costo_parcial FLOAT DEFAULT 150.0;\n" +
-                    "    DECLARE costo_semestral FLOAT DEFAULT 400.0;\n" +
+                    "    DECLARE costo_parcial FLOAT DEFAULT 100.0;\n" +
+                    "    DECLARE costo_semestral FLOAT DEFAULT 350.0;\n" +
                     "    \n" +
                     "    -- Elimina registros previos\n" +
                     "    DELETE FROM ingresos;\n" +
                     "    \n" +
                     "    -- Inserta nuevos registros\n" +
-                    "    INSERT INTO ingresos (id_ingresos, costo_parciales, costo_semestrales, costo_total, id_alumno)\n"
+                    "    INSERT INTO ingresos (id_ingresos, costo_total_parciales, cost_total_semestrales, id_alumno)\n"
                     +
                     "    SELECT\n" +
                     "        ROW_NUMBER() OVER () AS id_ingresos,\n" +
-                    "        ir.cantidad_parciales * costo_parcial AS costo_parciales,\n" +
-                    "        ir.cantidad_semestrales * costo_semestral AS costo_semestrales,\n" +
-                    "        (ir.cantidad_parciales * costo_parcial) + (ir.cantidad_semestrales * costo_semestral) AS costo_total,\n"
-                    +
+                    "        ir.cantidad_parciales * costo_parcial AS costo_total_parciales,\n" +
+                    "        ir.cantidad_semestrales * costo_semestral AS cost_total_semestrales,\n" +
                     "        ir.id_alumno\n" +
                     "    FROM\n" +
                     "        indicadores_rendimiento ir;\n" +
